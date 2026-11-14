@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<title>İY/MS Masası</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: üstte durum şeridi + sekmeler, altında tek sütun kart akışı; İY/MS her maçta 3x3 matris (satır = ilk yarı, sütun = maç sonu) */
+:root {
+  --bg: #f2f4f7; --surface: #ffffff; --sunk: #e8ecf2; --line: #d5dbe4;
+  --ink: #141a24; --muted: #5b6577; --accent: #1f47b8; --accent-soft: #e3e9f9;
+  --good: #137a4b; --good-soft: #def3e8; --bad: #b4372f; --warn: #a86a00; --warn-soft: #f8edd6;
+  --f-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f131a; --surface: #171d27; --sunk: #1e2632; --line: #2b3543;
+  --ink: #e6ebf2; --muted: #96a1b3; --accent: #7d9bff; --accent-soft: #1f2a48;
+  --good: #4fcf8e; --good-soft: #15342a; --bad: #f08a80; --warn: #e6b04f; --warn-soft: #3a2e14; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0f131a; --surface: #171d27; --sunk: #1e2632; --line: #2b3543;
+  --ink: #e6ebf2; --muted: #96a1b3; --accent: #7d9bff; --accent-soft: #1f2a48;
+  --good: #4fcf8e; --good-soft: #15342a; --bad: #f08a80; --warn: #e6b04f; --warn-soft: #3a2e14; color-scheme: dark }
+
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--f-body); margin: 0 }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface) }
+.wrap { max-width: 860px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)) }
+header { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line) }
+.top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding-block: 12px 6px; flex-wrap: wrap }
+h1 { font: 700 26px/1 var(--f-display); letter-spacing: .02em; margin: 0; text-transform: uppercase }
+h1 span { color: var(--accent) }
+.status { font: 12px var(--f-mono); color: var(--muted) }
+nav { display: flex; gap: 4px; overflow-x: auto; padding-block: 4px 0 }
+nav a { font: 600 15px var(--f-display); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); text-decoration: none; padding: 8px 12px; border-bottom: 3px solid transparent; white-space: nowrap }
+nav a[aria-current="true"] { color: var(--ink); border-color: var(--accent) }
+nav a .n { font: 500 11px var(--f-mono); background: var(--sunk); border-radius: 99px; padding: 1px 6px; margin-left: 4px; color: var(--muted) }
+main { padding-block: 16px 48px; display: grid; gap: 14px }
+.demo { background: var(--warn-soft); color: var(--warn); border-radius: var(--r); padding: 10px 14px; font-size: 13px }
+.lead { color: var(--muted); font-size: 14px; margin: 0; max-width: 62ch }
+.filters { display: flex; gap: 8px; flex-wrap: wrap }
+select, input[type=search] { font: 14px var(--f-body); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-width: 0; flex: 1 1 160px }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px; display: grid; gap: 10px; min-width: 0 }
+.meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 12px; color: var(--muted) }
+.meta .ko { font-family: var(--f-mono) }
+.chip { font: 600 11px var(--f-body); letter-spacing: .04em; text-transform: uppercase; border-radius: 99px; padding: 2px 8px; background: var(--sunk); color: var(--muted) }
+.chip.yuksek { background: var(--good-soft); color: var(--good) }
+.chip.orta { background: var(--warn-soft); color: var(--warn) }
+.teams { font: 600 22px/1.15 var(--f-display); letter-spacing: .01em; text-wrap: balance }
+.teams small { color: var(--muted); font-weight: 500; padding-inline: 6px }
+.odds-row { display: flex; gap: 14px; flex-wrap: wrap; font: 13px var(--f-mono); color: var(--muted); font-variant-numeric: tabular-nums }
+.odds-row b { color: var(--ink); font-weight: 500 }
+
+.pick { display: grid; grid-template-columns: auto 1fr auto; gap: 4px 14px; align-items: center; background: var(--good-soft); border-radius: 8px; padding: 10px 12px }
+.pick .lab { font: 700 30px/1 var(--f-display); color: var(--good) }
+.pick .nums { font: 13px var(--f-mono); font-variant-numeric: tabular-nums; color: var(--ink); display: grid; gap: 2px; min-width: 0 }
+.pick .stake { text-align: right; font: 12px var(--f-body); color: var(--muted) }
+.pick .stake b { display: block; font: 600 20px var(--f-display); color: var(--ink) }
+
+.mx-toggle { justify-self: start; background: none; border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font: 500 13px var(--f-body); color: var(--accent); cursor: pointer }
+.mx { overflow-x: auto }
+.mx table { border-collapse: separate; border-spacing: 4px; width: 100%; min-width: 330px; font-variant-numeric: tabular-nums }
+.mx th { font: 600 12px var(--f-display); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 2px }
+.mx th.axis { text-align: left; font-size: 11px }
+.mx td { background: var(--sunk); border-radius: 6px; padding: 6px 4px; text-align: center; vertical-align: top }
+.mx td .o { font: 600 18px var(--f-display); display: block }
+.mx td .f { font: 11px var(--f-mono); color: var(--muted); display: block }
+.mx td .e { font: 500 11px var(--f-mono); display: block }
+.mx td.v { background: var(--good-soft); box-shadow: inset 0 0 0 2px var(--good) }
+.pos { color: var(--good) } .neg { color: var(--bad) }
+.legend { font-size: 12px; color: var(--muted) }
+
+.empty { text-align: center; color: var(--muted); padding: 32px 12px; background: var(--surface); border: 1px dashed var(--line); border-radius: var(--r) }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px }
+.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 12px }
+.kpi span { font-size: 12px; color: var(--muted) }
+.kpi b { display: block; font: 600 26px var(--f-display); font-variant-numeric: tabular-nums }
+h2 { font: 600 18px var(--f-display); letter-spacing: .06em; text-transform: uppercase; margin: 8px 0 0 }
+.tbl { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r) }
+.tbl table { border-collapse: collapse; width: 100%; font-size: 13px; font-variant-numeric: tabular-nums }
+.tbl th, .tbl td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap }
+.tbl th { font: 600 12px var(--f-display); letter-spacing: .06em; text-transform: uppercase; color: var(--muted) }
+.tbl td.num { font-family: var(--f-mono); text-align: right }
+.cal { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px }
+.cal .card h3 { margin: 0; font: 600 20px var(--f-display) }
+.cal svg { width: 100%; height: auto; display: block }
+.lock { max-width: 360px; margin: 12vh auto 0; display: grid; gap: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 22px }
+.lock h2 { margin: 0 }
+.lock input[type=password] { font: 16px var(--f-body); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; width: 100% }
+.lock label.rem { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--muted) }
+.lock button { font: 600 16px var(--f-display); letter-spacing: .06em; text-transform: uppercase; background: var(--accent); color: var(--surface); border: 0; border-radius: 8px; padding: 10px; cursor: pointer }
+.lock .err { color: var(--bad); font-size: 13px; min-height: 1.2em }
+.logout { background: none; border: 0; color: var(--muted); font: 12px var(--f-body); text-decoration: underline; cursor: pointer; padding: 0 }
+.verdict { padding: 12px 14px; border-radius: var(--r); background: var(--accent-soft); color: var(--ink); font-weight: 500 }
+@media (prefers-reduced-motion: no-preference) { .card { transition: border-color .15s } .card:hover { border-color: var(--accent) } }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="top"><h1>İY/MS <span>Masası</span></h1><div class="status" id="status">Yükleniyor…</div></div>
+    <nav id="nav">
+      <a href="#firsatlar" data-v="firsatlar">Fırsatlar <span class="n" id="n-f">0</span></a>
+      <a href="#maclar" data-v="maclar">Tüm maçlar <span class="n" id="n-m">0</span></a>
+      <a href="#defter" data-v="defter">Sanal defter</a>
+      <a href="#model" data-v="model">Model sağlığı</a>
+    </nav>
+  </div>
+</header>
+<main class="wrap" id="main"></main>
+
+<script>
+const LAB = ["1/1","1/0","1/2","0/1","0/0","0/2","2/1","2/0","2/2"];
+const S = { meta: null, preds: [], ledger: null, report: null, league: "", q: "", open: new Set() };
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const pct = (x, d = 1) => x == null ? "–" : (x * 100).toFixed(d).replace(".", ",") + "%";
+const sgn = x => (x >= 0 ? "+" : "") + pct(x);
+const num = (x, d = 2) => x == null ? "–" : Number(x).toFixed(d).replace(".", ",");
+const ko = iso => { if (!iso) return "–"; const d = new Date(iso);
+  return d.toLocaleString("tr-TR", { weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Istanbul" }); };
+const confTxt = { "yüksek": "Yüksek güven", "orta": "Orta güven", "düşük": "Düşük güven" };
+const confCls = c => c === "yüksek" ? "yuksek" : c === "orta" ? "orta" : "";
+
+// --- Şifreli veri: AES-256-GCM, anahtar şifreden PBKDF2-SHA256 ile türetilir ---
+const KEY_STORE = "iyms_key";
+const b64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+let KEY = null;
+async function deriveKey(pw, bundle) {
+  const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(pw), "PBKDF2", false, ["deriveBits"]);
+  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: b64(bundle.salt), iterations: bundle.iter }, base, 256);
+  return new Uint8Array(bits);
+}
+async function decrypt(raw, bundle) {
+  const k = await crypto.subtle.importKey("raw", raw, "AES-GCM", false, ["decrypt"]);
+  const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64(bundle.iv) }, k, b64(bundle.ct));
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+async function fetchBundle() {
+  const r = await fetch(`data.enc.json?t=${Date.now()}`);
+  if (!r.ok) throw new Error("veri yok");
+  return r.json();
+}
+function saved() { try { return JSON.parse(localStorage.getItem(KEY_STORE) || "null"); } catch { return null; } }
+function save(v) { try { v ? localStorage.setItem(KEY_STORE, JSON.stringify(v)) : localStorage.removeItem(KEY_STORE); } catch {} }
+
+async function load() {
+  if (window.IYMS_DEMO) { Object.assign(S, window.IYMS_DEMO); return true; }
+  if (!KEY) return false;
+  const bundle = await fetchBundle();
+  if (KEY.salt !== bundle.salt) { KEY = null; save(null); return false; }   // şifre değişmiş: yeniden giriş
+  const d = await decrypt(Uint8Array.from(KEY.raw), bundle);
+  S.meta = d.meta; S.preds = d.preds || []; S.ledger = d.ledger; S.report = d.report;
+  return true;
+}
+
+function lockScreen(msg = "") {
+  $("#nav").hidden = true;
+  $("#status").textContent = "";
+  $("#main").innerHTML = `<form class="lock" id="lock">
+    <h2>Giriş</h2>
+    <input type="password" id="pw" placeholder="Şifre" autocomplete="current-password" aria-label="Şifre" required>
+    <label class="rem"><input type="checkbox" id="rem" checked> Bu cihazda hatırla</label>
+    <button type="submit">Aç</button>
+    <div class="err" id="err">${esc(msg)}</div></form>`;
+  $("#pw").focus();
+}
+document.addEventListener("submit", async e => {
+  if (e.target.id !== "lock") return;
+  e.preventDefault();
+  const pw = $("#pw").value, rem = $("#rem").checked;
+  $("#err").textContent = "Açılıyor…";
+  try {
+    const bundle = await fetchBundle();
+    KEY = { salt: bundle.salt, raw: Array.from(await deriveKey(pw, bundle)) };
+    await load();
+    if (rem) save(KEY); else save(null);      // şifre değil, türetilmiş anahtar saklanır
+    $("#nav").hidden = false;
+    render();
+  } catch (err) {
+    KEY = null;
+    $("#err").textContent = err.message === "veri yok" ? "Veri henüz yayınlanmadı. Birkaç dakika sonra tekrar dene." : "Şifre yanlış.";
+  }
+});
+document.addEventListener("click", e => { if (e.target.id === "logout") { save(null); KEY = null; lockScreen(); } });
+
+function matrix(p) {
+  const cell = lab => { const o = p.outcomes.find(x => x.label === lab);
+    return `<td class="${o.value ? "v" : ""}"><span class="o">${num(o.odds)}</span><span class="f">adil ${num(o.fair)}</span><span class="e ${o.edge >= 0 ? "pos" : "neg"}">${sgn(o.edge)}</span></td>`; };
+  const row = (h, name) => `<tr><th class="axis">${name}</th>${["1","0","2"].map(f => cell(`${h}/${f}`)).join("")}</tr>`;
+  return `<div class="mx"><table><thead><tr><th class="axis">İY ↓ / MS →</th><th>1</th><th>0</th><th>2</th></tr></thead>
+    <tbody>${row("1","İY 1")}${row("0","İY 0")}${row("2","İY 2")}</tbody></table></div>
+    <div class="legend">Büyük sayı Nesine oranı, altında modelin adil oranı ve avantaj. Nesine İY/MS marjı: ${pct(p.nesine_margin)}</div>`;
+}
+
+function card(p, picksOnly) {
+  const vals = p.outcomes.filter(o => o.value);
+  const open = S.open.has(p.id) || (!picksOnly && false);
+  const ms = p.ms ? `<span>MS <b>${p.ms.map(x => num(x)).join(" · ")}</b></span>` : "";
+  const ou = p.ou25 ? `<span>2.5 Ü/A <b>${num(p.ou25[0])} · ${num(p.ou25[1])}</b></span>` : "";
+  const gb = `<span>Gol bekl. <b>${num(p.profile.lam_home)} – ${num(p.profile.lam_away)}</b></span>`;
+  const picks = vals.map(o => `<div class="pick"><div class="lab">${o.label}</div>
+      <div class="nums"><span>Oran <b>${num(o.odds)}</b> · adil ${num(o.fair)} (${num(o.fair_lo)}–${num(o.fair_hi)})</span>
+      <span>Avantaj <b class="pos">${sgn(o.edge)}</b> · en kötü senaryoda ${sgn(o.edge_lo)}</span></div>
+      <div class="stake">Öneri<b>${o.stake.toLocaleString("tr-TR")} ₺</b></div></div>`).join("");
+  return `<article class="card">
+    <div class="meta"><span class="ko">${ko(p.kickoff)}</span><span>${esc(p.league_name || p.league)}</span>
+      <span class="chip ${confCls(p.confidence)}" title="${p.source === "referans" ? "Profil düşük marjlı referans piyasadan" : "Profil Nesine oranlarından"}">${confTxt[p.confidence] || p.confidence}</span></div>
+    <div class="teams">${esc(p.home)}<small>–</small>${esc(p.away)}</div>
+    <div class="odds-row">${ms}${ou}${gb}</div>
+    ${picks}
+    <button class="mx-toggle" data-id="${esc(p.id)}" aria-expanded="${open}">${open ? "İY/MS tablosunu gizle" : "İY/MS tablosunu göster"}</button>
+    ${open ? matrix(p) : ""}
+  </article>`;
+}
+
+function filterBar(list) {
+  const leagues = [...new Set(list.map(p => p.league_name || p.league))].sort((a, b) => a.localeCompare(b, "tr"));
+  return `<div class="filters"><select id="f-league" aria-label="Lig"><option value="">Tüm ligler</option>
+    ${leagues.map(l => `<option ${l === S.league ? "selected" : ""}>${esc(l)}</option>`).join("")}</select>
+    <input type="search" id="f-q" placeholder="Takım ara" value="${esc(S.q)}" aria-label="Takım ara"></div>`;
+}
+const applyF = list => list.filter(p => (!S.league || (p.league_name || p.league) === S.league) &&
+  (!S.q || (p.home + " " + p.away).toLocaleLowerCase("tr").includes(S.q.toLocaleLowerCase("tr"))));
+
+function vFirsatlar() {
+  const list = applyF(S.preds.filter(p => p.n_value > 0));
+  const r = S.meta?.rules;
+  const intro = `<p class="lead">Modelin adil oranından en az ${pct(r?.min_edge ?? .1, 0)} yüksek ve belirsizlik aralığının en kötü ucunda bile değerli kalan İY/MS seçenekleri. Öneri miktarı ${num((r?.kelly ?? .125) * 8, 0)}/8 Kelly ile hesaplanır, kasanın en fazla ${pct(r?.max_stake_pct ?? .01, 0)}'i.</p>`;
+  return intro + filterBar(S.preds.filter(p => p.n_value > 0)) + (list.length ? list.map(p => card(p, true)).join("")
+    : `<div class="empty">Şu an kurallardan geçen fırsat yok. Bu normal: çoğu maçta Nesine'nin İY/MS fiyatı adil oranın altında. Sistem 15–20 dakikada bir yeniden bakar.</div>`);
+}
+function vMaclar() {
+  const list = applyF(S.preds);
+  return `<p class="lead">Önümüzdeki 72 saatteki maçlar. Her maçın İY/MS tablosunu açıp Nesine oranını modelin adil oranıyla karşılaştırabilirsin.</p>`
+    + filterBar(S.preds) + (list.length ? list.map(p => card(p, false)).join("") : `<div class="empty">Gösterilecek maç yok.</div>`);
+}
+function vDefter() {
+  const L = S.ledger;
+  if (!L || !L.total) return `<div class="empty">Henüz sanal bahis yok. Sistem bir fırsat bulduğunda, o anki oranla buraya otomatik yazar; para yatırılmaz. Sonuçlar haftalık eğitimde işlenir.</div>`;
+  const k = (t, v) => `<div class="kpi"><span>${t}</span><b>${v}</b></div>`;
+  const rows = L.rows.map(r => `<tr><td>${esc((r.kickoff || "").slice(0, 10))}</td><td>${esc(r.home)} – ${esc(r.away)}</td><td>${esc(r.pick)}</td>
+    <td class="num">${num(r.odds)}</td><td class="num">${r.close_odds ? num(r.close_odds) : "–"}</td><td class="num">${pct(+r.edge)}</td>
+    <td>${r.result ? (r.result === r.pick ? `<span class="pos">${esc(r.result)} ✓</span>` : esc(r.result)) : "bekliyor"}</td>
+    <td class="num ${+r.pnl > 0 ? "pos" : +r.pnl < 0 ? "neg" : ""}">${r.pnl !== "" && r.pnl != null ? num(r.pnl, 0) : "–"}</td></tr>`).join("");
+  return `<p class="lead">Sistemin önerdiği her bahis, önerildiği andaki oranla kaydedilir. Kazanç ve kayıp gürültülüdür; seçimlerin kalitesini en hızlı gösteren ölçü kapanış oranı farkıdır (CLV).</p>
+    <div class="kpis">${k("Bahis", `${L.settled}/${L.total}`)}${k("Kazanan / beklenen", `${L.wins} / ${num(L.expected_wins, 1)}`)}
+    ${k("Kâr/zarar", `${num(L.pnl, 0)} ₺`)}${k("ROI", L.roi == null ? "–" : sgn(L.roi))}${k("Ort. CLV", L.avg_clv == null ? "–" : sgn(L.avg_clv))}</div>
+    <div class="tbl"><table><thead><tr><th>Tarih</th><th>Maç</th><th>Seçim</th><th>Oran</th><th>Kapanış</th><th>Avantaj</th><th>Sonuç</th><th>K/Z</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+function calChart(c) {
+  const W = 240, H = 150, pad = 30;
+  const mx = Math.max(.01, ...c.bins.flatMap(b => [b.pred, b.actual])) * 1.1;
+  const x = v => pad + v / mx * (W - pad - 8), y = v => H - pad - v / mx * (H - pad - 8);
+  const pts = c.bins.map(b => `<circle cx="${x(b.pred)}" cy="${y(b.actual)}" r="${3 + Math.min(5, Math.sqrt(b.n) / 6)}" fill="var(--accent)" fill-opacity=".75"></circle>`).join("");
+  const t = [0, mx / 2, mx].map(v => v);
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Kalibrasyon">
+    <line x1="${x(0)}" y1="${y(0)}" x2="${x(mx)}" y2="${y(mx)}" stroke="var(--line)" stroke-dasharray="4 3"></line>
+    <line x1="${pad}" y1="${H - pad}" x2="${W - 8}" y2="${H - pad}" stroke="var(--line)"></line>
+    <line x1="${pad}" y1="8" x2="${pad}" y2="${H - pad}" stroke="var(--line)"></line>
+    ${t.map(v => `<text x="${x(v)}" y="${H - pad + 14}" font-size="9" text-anchor="middle" fill="var(--muted)">${pct(v, 0)}</text><text x="${pad - 4}" y="${y(v) + 3}" font-size="9" text-anchor="end" fill="var(--muted)">${pct(v, 0)}</text>`).join("")}
+    <text x="${(W + pad) / 2}" y="${H - 3}" font-size="9" text-anchor="middle" fill="var(--muted)">Tahmin</text>
+    ${pts}</svg>`;
+}
+function calFix(c) {
+  if (!c || !c.detail) return "";
+  const rows = LAB.map(l => { const d = c.detail[l]; const f = d.factor;
+    return `<tr><td>${l}</td><td class="num">${pct(d.raw_pred, 2)}</td><td class="num">${pct(d.fixed_pred, 2)}</td>
+      <td class="num">${pct(d.actual, 2)}</td><td class="num ${f > 1.01 ? "pos" : f < 0.99 ? "neg" : ""}">×${num(f, 3)}</td></tr>`; }).join("");
+  return `<h2>Kalibrasyon düzeltmesi</h2>
+    <div class="verdict">${c.enabled ? "Devrede" : "Devre dışı"}: ${esc(c.reason)}</div>
+    <p class="lead">Model her sonuç için hiç görmediği son sezonlarda ölçülen sapmaya göre ayarlanır. Çarpan 1'den büyükse model o sonucu az tahmin ediyordu ve olasılığı yukarı çekiliyor. Test aylık kayan yöntemle yapıldı: her ay, sadece o aydan önceki maçlardan hesaplanan çarpanlarla denendi (${c.n_months || 0} ay, ${(c.holdout_n || 0).toLocaleString("tr-TR")} maç). Ortalama kalibrasyon hatası ${pct(c.eval.cal_err_raw)} → ${pct(c.eval.cal_err_fixed)}.</p>
+    <div class="tbl"><table><thead><tr><th>Sonuç</th><th>Ham tahmin</th><th>Düzeltilmiş</th><th>Gerçekleşen</th><th>Çarpan</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+function vModel() {
+  const R = S.report, M = S.meta?.model;
+  if (!R || R.error) return `<div class="empty">Model henüz eğitilmedi. Haftalık eğitim çalıştığında burada isabet testleri görünür.</div>`;
+  const o = R.overall, name = { model: "İki aşamalı model", naive: "Saf Poisson", empirical: "Benzer oran tablosu" };
+  const rows = Object.keys(o).map(k => `<tr><td>${name[k]}${k === R.best ? " ★" : ""}</td><td class="num">${o[k].log_loss.toFixed(4)}</td><td class="num">${o[k].brier.toFixed(4)}</td></tr>`).join("");
+  const cal = LAB.map(l => { const c = R.calibration[l];
+    return `<div class="card"><h3>${l}</h3><div class="meta">Ortalama tahmin ${pct(c.mean_pred)} · gerçekleşen ${pct(c.actual)}</div>${calChart(c)}</div>`; }).join("");
+  const share = M ? Object.entries(M.first_half_share).sort((a, b) => b[1] - a[1]).map(([d, v]) =>
+    `<tr><td>${esc(S.meta.league_names?.[d] || d)}</td><td class="num">${pct(v)}</td></tr>`).join("") : "";
+  return `<div class="verdict">${esc(R.verdict)}</div>
+    <p class="lead">Test, modelin hiç görmediği ${R.test_seasons.length} sezon (${R.n.toLocaleString("tr-TR")} maç) üzerinde yapıldı. Düşük değer daha iyi. ${M ? `Model ${M.n_matches.toLocaleString("tr-TR")} maçla eğitildi (${M.date_range.join(" – ")}).` : ""}</p>
+    <div class="tbl"><table><thead><tr><th>Model</th><th>Log-loss</th><th>Brier</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <h2>Kalibrasyon</h2><p class="lead">Noktalar kesik çizgiye ne kadar yakınsa model o kadar dürüst: "%5" dediği sonuçlar gerçekten yaklaşık %5 geliyor demektir.</p>
+    <div class="cal">${cal}</div>
+    ${calFix(R.calibration_fix)}
+    ${share ? `<h2>Liglerde ilk yarı gol payı</h2><div class="tbl"><table><thead><tr><th>Lig</th><th>İlk yarı payı</th></tr></thead><tbody>${share}</tbody></table></div>` : ""}`;
+}
+
+const VIEWS = { firsatlar: vFirsatlar, maclar: vMaclar, defter: vDefter, model: vModel };
+function render() {
+  const v = VIEWS[location.hash.slice(1)] ? location.hash.slice(1) : "firsatlar";
+  document.querySelectorAll("#nav a").forEach(a => a.setAttribute("aria-current", a.dataset.v === v));
+  const m = S.meta;
+  $("#status").innerHTML = (m ? `Son güncelleme ${ko(m.updated)} · ${m.n_events} maç · ${m.n_matched} referanslı` : "Veri henüz yok")
+    + (window.IYMS_DEMO ? "" : ` · <button class="logout" id="logout">Çıkış</button>`);
+  $("#n-f").textContent = S.preds.filter(p => p.n_value > 0).length;
+  $("#n-m").textContent = S.preds.length;
+  $("#main").innerHTML = (window.IYMS_DEMO ? `<div class="demo">Bu bir önizleme: gösterilen maçlar ve oranlar örnek veridir, gerçek bülten değildir.</div>` : "") + VIEWS[v]();
+}
+document.addEventListener("click", e => { const b = e.target.closest(".mx-toggle"); if (!b) return;
+  const id = b.dataset.id; S.open.has(id) ? S.open.delete(id) : S.open.add(id); render(); });
+document.addEventListener("change", e => { if (e.target.id === "f-league") { S.league = e.target.value; render(); } });
+document.addEventListener("input", e => { if (e.target.id === "f-q") { S.q = e.target.value; const pos = e.target.selectionStart; render();
+  const el = $("#f-q"); el.focus(); el.setSelectionRange(pos, pos); } });
+window.addEventListener("hashchange", () => { if (KEY || window.IYMS_DEMO) render(); });
+(async () => {
+  const s = saved();
+  if (s && s.salt && Array.isArray(s.raw)) KEY = s;
+  try { if (await load()) { $("#nav").hidden = false; render(); return; } } catch { KEY = null; save(null); }
+  lockScreen();
+})();
+setInterval(async () => { if (KEY && !window.IYMS_DEMO) { try { await load(); render(); } catch {} } }, 5 * 60 * 1000);
+</script>
+</body>
+</html>
